@@ -1033,8 +1033,8 @@ async function sendMessage() {
   try {
     const authHeader = API_KEY.startsWith('Bearer ') ? API_KEY : 'Bearer ' + API_KEY;
     
-    // Use Proxy if enabled OR if we are in auto-retry mode
-    let finalUrl = USE_PROXY ? 'https://corsproxy.io/?' + encodeURIComponent(API_URL) : API_URL;
+    // Use AllOrigins Proxy if enabled
+    let finalUrl = USE_PROXY ? 'https://api.allorigins.win/raw?url=' + encodeURIComponent(API_URL) : API_URL;
 
     const performFetch = async (url) => {
       abortCtrl = new AbortController();
@@ -1066,7 +1066,7 @@ async function sendMessage() {
       // Se falhou e não estávamos usando proxy, tenta com proxy automaticamente
       if (!USE_PROXY && (err.message.includes('Failed to fetch') || err.name === 'TypeError')) {
         console.warn("Detectado possível erro de CORS. Tentando via Proxy...");
-        finalUrl = 'https://corsproxy.io/?' + encodeURIComponent(API_URL);
+        finalUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(API_URL);
         res = await performFetch(finalUrl);
       } else {
         throw err;
