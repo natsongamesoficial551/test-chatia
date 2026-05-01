@@ -701,6 +701,11 @@ textarea::placeholder { color: var(--text3); }
       <input type="text" id="setApiModel" class="field-input" placeholder="gpt-4o">
     </div>
 
+    <div class="field" style="display:flex; align-items:center; gap:10px;">
+      <input type="checkbox" id="setApiStream" style="width:16px; height:16px; cursor:pointer;">
+      <label for="setApiStream" class="field-label" style="margin-bottom:0; cursor:pointer;">Habilitar Streaming (Resposta em tempo real)</label>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeSettings()">Cancelar</button>
       <button class="btn btn-primary" onclick="saveSettings()">Salvar Alterações</button>
@@ -715,6 +720,7 @@ textarea::placeholder { color: var(--text3); }
 let API_URL = localStorage.getItem('nb_api_url') || "https://automa-o-business.vercel.app/api/v1/chat/completions";
 let API_KEY = localStorage.getItem('nb_api_key') || "foundry_sk_bzrixgfs6li";
 let MODEL   = localStorage.getItem('nb_api_model') || 'gpt-4o';
+let USE_STREAM = localStorage.getItem('nb_api_stream') === 'true'; // Default false to match curl
 
 /* ═══════════════════════════════
    DB — localStorage como banco SQL local
@@ -858,6 +864,7 @@ function openSettings() {
   document.getElementById('setApiUrl').value = API_URL;
   document.getElementById('setApiKey').value = API_KEY;
   document.getElementById('setApiModel').value = MODEL;
+  document.getElementById('setApiStream').checked = USE_STREAM;
   document.getElementById('settingsModal').style.display = 'flex';
 }
 
@@ -869,6 +876,7 @@ function saveSettings() {
   const url = document.getElementById('setApiUrl').value.trim();
   const key = document.getElementById('setApiKey').value.trim();
   const mod = document.getElementById('setApiModel').value.trim();
+  const str = document.getElementById('setApiStream').checked;
   
   if (!url || !key || !mod) {
     toast('Preencha todos os campos');
@@ -878,10 +886,12 @@ function saveSettings() {
   API_URL = url;
   API_KEY = key;
   MODEL = mod;
+  USE_STREAM = str;
   
   localStorage.setItem('nb_api_url', url);
   localStorage.setItem('nb_api_key', key);
   localStorage.setItem('nb_api_model', mod);
+  localStorage.setItem('nb_api_stream', str);
   
   closeSettings();
   toast('Configurações salvas!');
@@ -1014,9 +1024,16 @@ async function sendMessage() {
     abortCtrl = new AbortController();
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + API_KEY, 'Content-Type': 'application/json' },
+      headers: { 
+        'Authorization': 'Bearer ' + API_KEY, 
+        'Content-Type': 'application/json'
+      },
       signal: abortCtrl.signal,
-      body: JSON.stringify({ model: MODEL, messages: history, stream: true })
+      body: JSON.stringify({ 
+        model: MODEL, 
+        messages: history, 
+        stream: USE_STREAM 
+      })
     });
 
     if (!res.ok) {
