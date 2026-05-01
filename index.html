@@ -1019,7 +1019,10 @@ async function sendMessage() {
       body: JSON.stringify({ model: MODEL, messages: history, stream: true })
     });
 
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status} ${res.statusText}${errorText ? ': ' + errorText.slice(0,100) : ''}`);
+    }
 
     const reader  = res.body.getReader();
     const decoder = new TextDecoder();
@@ -1070,7 +1073,7 @@ async function sendMessage() {
       }
     }
 
-    // Se acabou o loop e não temos texto, mas temos buffer (caso o loop tenha saído sem cair no isStream acima)
+    // Se acabou o loop e não temos texto, mas temos buffer
     if (!fullText && buffer.trim()) {
        try {
           const data = JSON.parse(buffer);
@@ -1091,12 +1094,19 @@ async function sendMessage() {
           headers: { 'Authorization': 'Bearer ' + API_KEY, 'Content-Type': 'application/json' },
           body: JSON.stringify({ model: MODEL, messages: history })
         });
+        
+        if (!r2.ok) {
+           const errorBody = await r2.text().catch(() => "");
+           throw new Error(`Erro API (${r2.status}): ${errorBody.slice(0, 50) || r2.statusText}`);
+        }
+        
         const data = await r2.json();
         fullText = data.choices?.[0]?.message?.content || data.choices?.[0]?.text || '';
         if (fullText) streamEl.innerHTML = md(fullText);
         else throw new Error('Resposta vazia da API');
       } catch (e2) {
-        streamEl.innerHTML = '<span style="color:#ef4444">⚠️ ' + esc(e2.message) + '</span>';
+        streamEl.innerHTML = '<div style="color:#ef4444; background:rgba(239,68,68,0.1); padding:10px; border-radius:8px; margin-top:5px; font-size:12px;">' + 
+                             '<strong>⚠️ Erro de Conexão</strong><br>' + esc(e2.message) + '</div>';
         console.error("Erro no fallback:", e2);
       }
     }
