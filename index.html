@@ -706,6 +706,11 @@ textarea::placeholder { color: var(--text3); }
       <label for="setApiStream" class="field-label" style="margin-bottom:0; cursor:pointer;">Habilitar Streaming (Resposta em tempo real)</label>
     </div>
 
+    <div class="field" style="display:flex; align-items:center; gap:10px;">
+      <input type="checkbox" id="setApiProxy" style="width:16px; height:16px; cursor:pointer;">
+      <label for="setApiProxy" class="field-label" style="margin-bottom:0; cursor:pointer;">Burlar CORS (Usar Proxy)</label>
+    </div>
+
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeSettings()">Cancelar</button>
       <button class="btn btn-primary" onclick="saveSettings()">Salvar Alterações</button>
@@ -720,7 +725,8 @@ textarea::placeholder { color: var(--text3); }
 let API_URL = localStorage.getItem('nb_api_url') || "https://automa-o-business.vercel.app/api/v1/chat/completions";
 let API_KEY = localStorage.getItem('nb_api_key') || "foundry_sk_bzrixgfs6li";
 let MODEL   = localStorage.getItem('nb_api_model') || 'gpt-4o';
-let USE_STREAM = localStorage.getItem('nb_api_stream') === 'true'; // Default false to match curl
+let USE_STREAM = localStorage.getItem('nb_api_stream') === 'true';
+let USE_PROXY  = localStorage.getItem('nb_api_proxy') === 'true';
 
 /* ═══════════════════════════════
    DB — localStorage como banco SQL local
@@ -865,6 +871,7 @@ function openSettings() {
   document.getElementById('setApiKey').value = API_KEY;
   document.getElementById('setApiModel').value = MODEL;
   document.getElementById('setApiStream').checked = USE_STREAM;
+  document.getElementById('setApiProxy').checked = USE_PROXY;
   document.getElementById('settingsModal').style.display = 'flex';
 }
 
@@ -877,6 +884,7 @@ function saveSettings() {
   const key = document.getElementById('setApiKey').value.trim();
   const mod = document.getElementById('setApiModel').value.trim();
   const str = document.getElementById('setApiStream').checked;
+  const prx = document.getElementById('setApiProxy').checked;
   
   if (!url || !key || !mod) {
     toast('Preencha todos os campos');
@@ -887,11 +895,13 @@ function saveSettings() {
   API_KEY = key;
   MODEL = mod;
   USE_STREAM = str;
+  USE_PROXY = prx;
   
   localStorage.setItem('nb_api_url', url);
   localStorage.setItem('nb_api_key', key);
   localStorage.setItem('nb_api_model', mod);
   localStorage.setItem('nb_api_stream', str);
+  localStorage.setItem('nb_api_proxy', prx);
   
   closeSettings();
   toast('Configurações salvas!');
@@ -1021,11 +1031,16 @@ async function sendMessage() {
   let fullText = '';
 
   try {
+    const authHeader = API_KEY.startsWith('Bearer ') ? API_KEY : 'Bearer ' + API_KEY;
+    
+    // Use Proxy if enabled
+    const finalUrl = USE_PROXY ? 'https://corsproxy.io/?' + encodeURIComponent(API_URL) : API_URL;
+
     abortCtrl = new AbortController();
-    const res = await fetch(API_URL, {
+    const res = await fetch(finalUrl, {
       method: 'POST',
       headers: { 
-        'Authorization': 'Bearer ' + API_KEY, 
+        'Authorization': authHeader, 
         'Content-Type': 'application/json'
       },
       signal: abortCtrl.signal,
