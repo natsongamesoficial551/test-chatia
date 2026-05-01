@@ -484,6 +484,106 @@ textarea::placeholder { color: var(--text3); }
   white-space: nowrap;
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── SETTINGS MODAL ── */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s var(--ease);
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius2);
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.modal-title { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+.modal-close {
+  background: transparent;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.1s;
+}
+.modal-close:hover { color: var(--text); }
+
+.field { margin-bottom: 16px; }
+.field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+.field-input {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.field-input:focus { border-color: var(--blue); }
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+.btn {
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text2); }
+.btn-ghost:hover { background: var(--bg4); }
+.btn-primary { background: var(--blue); border: none; color: #fff; }
+.btn-primary:hover { background: var(--blue2); }
+
+.settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--text2);
+  font-family: var(--sans);
+  font-size: 12px;
+  width: 100%;
+  transition: background 0.12s;
+}
+.settings-btn:hover { background: var(--bg4); color: var(--text); }
+.settings-btn svg { width: 14px; height: 14px; opacity: 0.7; }
 </style>
 </head>
 <body>
@@ -507,12 +607,18 @@ textarea::placeholder { color: var(--text3); }
     <div class="sidebar-section-label">Conversas</div>
     <div class="chat-list" id="chatList"></div>
 
-    <div class="sidebar-bottom">
-      <div class="sidebar-user-avatar">NB</div>
-      <div class="sidebar-user-info">
-        <div class="sidebar-user-name">Natan</div>
-        <div class="sidebar-user-sub">Salvo localmente</div>
+    <div class="sidebar-bottom" style="flex-direction: column; gap: 12px; align-items: stretch;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="sidebar-user-avatar">NB</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name">Natan</div>
+          <div class="sidebar-user-sub">Salvo localmente</div>
+        </div>
       </div>
+      <button class="settings-btn" onclick="openSettings()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        Configurações de IA
+      </button>
     </div>
   </aside>
 
@@ -570,12 +676,45 @@ textarea::placeholder { color: var(--text3); }
 
 <div class="toast" id="toast"></div>
 
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Configurações de IA</h3>
+      <button class="modal-close" onclick="closeSettings()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    
+    <div class="field">
+      <label class="field-label">API Endpoint</label>
+      <input type="text" id="setApiUrl" class="field-input" placeholder="https://...">
+    </div>
+    
+    <div class="field">
+      <label class="field-label">API Key</label>
+      <input type="password" id="setApiKey" class="field-input" placeholder="foundry_sk_...">
+    </div>
+    
+    <div class="field">
+      <label class="field-label">Modelo</label>
+      <input type="text" id="setApiModel" class="field-input" placeholder="gpt-4o">
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeSettings()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ═══════════════════════════════
    CONFIG
 ═══════════════════════════════ */
-const API_URL = "https://automa-o-business.vercel.app/api/v1/chat/completions";
-const API_KEY = "foundry_sk_bzrixgfs6li";
+let API_URL = localStorage.getItem('nb_api_url') || "https://automa-o-business.vercel.app/api/v1/chat/completions";
+let API_KEY = localStorage.getItem('nb_api_key') || "foundry_sk_bzrixgfs6li";
+let MODEL   = localStorage.getItem('nb_api_model') || 'gpt-4o';
 
 /* ═══════════════════════════════
    DB — localStorage como banco SQL local
@@ -630,7 +769,6 @@ const DB = {
    STATE
 ═══════════════════════════════ */
 let currentConvId = null;
-const MODEL = 'gpt-4o';
 let isLoading     = false;
 let abortCtrl     = null;
 let titleGenerated = false;
@@ -641,7 +779,12 @@ let titleGenerated = false;
 document.addEventListener('DOMContentLoaded', () => {
   setGreeting();
   renderSidebar();
-
+  
+  // Update model badge from config
+  const modelBadge = document.querySelector('.topbar div[style*="background:#18181d"]');
+  if (modelBadge) {
+    modelBadge.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0;"></span> ${MODEL}`;
+  }
 });
 
 function setGreeting() {
@@ -709,8 +852,47 @@ function deleteConv(e, id) {
 }
 
 /* ═══════════════════════════════
-   MODEL
+   SETTINGS
 ═══════════════════════════════ */
+function openSettings() {
+  document.getElementById('setApiUrl').value = API_URL;
+  document.getElementById('setApiKey').value = API_KEY;
+  document.getElementById('setApiModel').value = MODEL;
+  document.getElementById('settingsModal').style.display = 'flex';
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').style.display = 'none';
+}
+
+function saveSettings() {
+  const url = document.getElementById('setApiUrl').value.trim();
+  const key = document.getElementById('setApiKey').value.trim();
+  const mod = document.getElementById('setApiModel').value.trim();
+  
+  if (!url || !key || !mod) {
+    toast('Preencha todos os campos');
+    return;
+  }
+  
+  API_URL = url;
+  API_KEY = key;
+  MODEL = mod;
+  
+  localStorage.setItem('nb_api_url', url);
+  localStorage.setItem('nb_api_key', key);
+  localStorage.setItem('nb_api_model', mod);
+  
+  closeSettings();
+  toast('Configurações salvas!');
+  
+  // Update UI if needed
+  const modelBadge = document.querySelector('.topbar div[style*="background:#18181d"]');
+  if (modelBadge) {
+    modelBadge.innerHTML = `<span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0;"></span> ${MODEL}`;
+  }
+}
+
 /* ═══════════════════════════════
    TEXTAREA
 ═══════════════════════════════ */
