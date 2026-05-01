@@ -1033,27 +1033,44 @@ async function sendMessage() {
   try {
     const authHeader = API_KEY.startsWith('Bearer ') ? API_KEY : 'Bearer ' + API_KEY;
     
-    // Use Proxy if enabled
-    const finalUrl = USE_PROXY ? 'https://corsproxy.io/?' + encodeURIComponent(API_URL) : API_URL;
+    // Use Proxy if enabled OR if we are in auto-retry mode
+    let finalUrl = USE_PROXY ? 'https://corsproxy.io/?' + encodeURIComponent(API_URL) : API_URL;
 
-    abortCtrl = new AbortController();
-    const res = await fetch(finalUrl, {
-      method: 'POST',
-      headers: { 
-        'Authorization': authHeader, 
-        'Content-Type': 'application/json'
-      },
-      signal: abortCtrl.signal,
-      body: JSON.stringify({ 
-        model: MODEL, 
-        messages: history, 
-        stream: USE_STREAM 
-      })
-    });
+    const performFetch = async (url) => {
+      abortCtrl = new AbortController();
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 
+          'Authorization': authHeader, 
+          'Content-Type': 'application/json'
+        },
+        signal: abortCtrl.signal,
+        body: JSON.stringify({ 
+          model: MODEL, 
+          messages: history, 
+          stream: USE_STREAM 
+        })
+      });
 
-    if (!res.ok) {
-      const errorText = await res.text().catch(() => "");
-      throw new Error(`HTTP ${res.status} ${res.statusText}${errorText ? ': ' + errorText.slice(0,100) : ''}`);
+      if (!res.ok) {
+        const errorText = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status} ${res.statusText}${errorText ? ': ' + errorText.slice(0,100) : ''}`);
+      }
+      return res;
+    };
+
+    let res;
+    try {
+      res = await performFetch(finalUrl);
+    } catch (err) {
+      // Se falhou e não estávamos usando proxy, tenta com proxy automaticamente
+      if (!USE_PROXY && (err.message.includes('Failed to fetch') || err.name === 'TypeError')) {
+        console.warn("Detectado possível erro de CORS. Tentando via Proxy...");
+        finalUrl = 'https://corsproxy.io/?' + encodeURIComponent(API_URL);
+        res = await performFetch(finalUrl);
+      } else {
+        throw err;
+      }
     }
 
     const reader  = res.body.getReader();
